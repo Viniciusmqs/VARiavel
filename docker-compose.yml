@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  mysql_db:
+    image: mysql:8.0 # Usar a versão 8.0 do MySQL
+    container_name: variavel_mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password # ALtere para uma senha forte em produção!
+      MYSQL_DATABASE: variavel_db # Nome do banco de dados principal
+      MYSQL_USER: variavel_user # Usuário para o banco de dados
+      MYSQL_PASSWORD: variavel_password # Senha do usuário
+    ports:
+      - "3306:3306" # Mapeia a porta 3306 do host para a porta 3306 do container
+    volumes:
+      - db_data:/var/lib/mysql # Persiste os dados do banco de dados em um volume
+      # Opcional: - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql # Para scripts de inicialização
+    healthcheck: # Healthcheck para garantir que o MySQL esteja pronto
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "variavel_user", "-pvariavel_password"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+
+volumes:
+  db_data: # Definição do volume para persistência de dados
