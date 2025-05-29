@@ -1,0 +1,22 @@
+# Angular specific ignores
+/dist
+.angular/cache
+.angular/browserslist
+.angular/tsconfig.app.json
+.angular/tsconfig.spec.json
+.angular/karma.conf.js
+.angular/test.ts
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea/
+.vscode/
+*.js.map
+*.css.map
+*.ngfactory.js
+*.shim.js
+# Mac / OS X
+.DS_Store
+# Windows
+Thumbs.db
