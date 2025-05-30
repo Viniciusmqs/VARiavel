@@ -8,44 +8,60 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 @RestController
-@RequestMapping("/data-ingestion") // Novo prefixo para este controller
-public class TestController { // Renomeie para DataIngestionController se quiser, mas TestController funciona
+@RequestMapping("/data-ingestion")
+public class TestController {
 
     private final FootballApiClient footballApiClient;
-    private final DataIngestionService dataIngestionService; // Injete o novo serviço
+    private final DataIngestionService dataIngestionService;
 
     public TestController(FootballApiClient footballApiClient, DataIngestionService dataIngestionService) {
         this.footballApiClient = footballApiClient;
         this.dataIngestionService = dataIngestionService;
     }
 
-    @GetMapping("/leagues")
-    public Mono<String> getLeaguesFromApi() {
-        // Este endpoint ainda retorna o JSON bruto, para testes rápidos da API
+    // Endpoint para testar diretamente a API de ligas (sem salvar no DB)
+    @GetMapping("/leagues-raw") // Renomeado para evitar conflito com o agendador e ser mais descritivo
+    public Mono<String> getLeaguesFromApiRaw() {
         return footballApiClient.getLeagues();
     }
 
-    @GetMapping("/ingest-leagues")
-    public Mono<String> ingestLeagues() {
-        return dataIngestionService.ingestLeagues()
-                .thenReturn("Ingestão de ligas iniciada com sucesso! Verifique os logs para mais detalhes.");
-    }
-
-    @GetMapping("/ingest-teams")
-    public Mono<String> ingestTeams(@RequestParam Integer leagueId, @RequestParam Integer season) {
-        return dataIngestionService.ingestTeamsForLeague(leagueId, season)
-                .thenReturn(String.format("Ingestão de times para a liga %d temporada %d iniciada. Verifique os logs.", leagueId, season));
-    }
-
-    @GetMapping("/ingest-fixtures")
-    public Mono<String> ingestFixtures(@RequestParam Integer leagueId, @RequestParam Integer season) {
-        return dataIngestionService.ingestFixturesForLeagueAndSeason(leagueId, season)
-                .thenReturn(String.format("Ingestão de partidas para a liga %d temporada %d iniciada. Verifique os logs.", leagueId, season));
-    }
-
-    @GetMapping("/live-matches") // Mantenha este se quiser continuar testando partidas ao vivo diretamente
-    public Mono<String> getLiveMatchesFromApi() {
+    // Endpoint para testar diretamente a API de partidas ao vivo (sem salvar no DB)
+    @GetMapping("/live-matches-raw") // Renomeado para ser mais descritivo
+    public Mono<String> getLiveMatchesFromApiRaw() {
         return footballApiClient.getLiveMatches();
+    }
+
+    // --- Endpoints para Disparar Ingestão Manualmente (para testes ou necessidades pontuais) ---
+
+    @GetMapping("/ingest-leagues-manual")
+    public Mono<String> ingestLeaguesManual() {
+        // Dispara o método de serviço que busca e salva/atualiza ligas
+        dataIngestionService.ingestLeagues().subscribe(); // Não bloqueia, apenas dispara
+        return Mono.just("Ingestão manual de ligas iniciada. Verifique os logs da aplicação.");
+    }
+
+    @GetMapping("/ingest-teams-manual")
+    public Mono<String> ingestTeamsManual(@RequestParam Integer leagueId, @RequestParam Integer season) {
+        // Dispara o método de serviço que busca e salva/atualiza times para uma liga/temporada
+        dataIngestionService.ingestTeamsForLeague(leagueId, season).subscribe();
+        return Mono.just(String.format("Ingestão manual de times para a liga %d na temporada %d iniciada. Verifique os logs.", leagueId, season));
+    }
+
+    @GetMapping("/ingest-fixtures-manual")
+    public Mono<String> ingestFixturesManual(@RequestParam Integer leagueId, @RequestParam Integer season, @RequestParam(required = false) String date) {
+        // Dispara o método de serviço que busca e salva/atualiza partidas para uma liga/temporada/data
+        String dateToUse = (date != null && !date.isEmpty()) ? date : LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        dataIngestionService.ingestFixturesForDate(leagueId, dateToUse, season).subscribe();
+        return Mono.just(String.format("Ingestão manual de partidas para a liga %d na temporada %d e data %s iniciada. Verifique os logs.", leagueId, season, dateToUse));
+    }
+
+    @GetMapping("/ingest-live-fixtures-manual") // Novo endpoint para testar o agendador de live
+    public Mono<String> ingestLiveFixturesManual() {
+        dataIngestionService.scheduledIngestLiveFixtures(); // Chama diretamente o método agendado
+        return Mono.just("Ingestão manual de partidas ao vivo iniciada. Verifique os logs.");
     }
 }

@@ -22,7 +22,7 @@ public class FootballApiClient {
 
     public Mono<String> getLeagues() {
         return webClient.get()
-                .uri("/leagues") // Endpoint para buscar ligas
+                .uri("/leagues")
                 .retrieve()
                 .bodyToMono(String.class);
     }
@@ -38,18 +38,19 @@ public class FootballApiClient {
                 .bodyToMono(String.class);
     }
 
-    public Mono<String> getFixturesByLeagueAndSeason(Integer leagueId, Integer season) {
+    // Este método é NOVO para buscar fixtures por liga, temporada e DATA
+    public Mono<String> getFixturesByLeagueSeasonAndDate(Integer leagueId, Integer season, String date) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/fixtures")
                         .queryParam("league", leagueId)
                         .queryParam("season", season)
+                        .queryParam("date", date)
                         .build())
                 .retrieve()
                 .bodyToMono(String.class);
     }
 
-    // Mantenha APENAS ESTE método getLiveMatches()
     public Mono<String> getLiveMatches() {
         return webClient.get()
                 .uri("/fixtures?live=all")
