@@ -10,7 +10,6 @@ public class FootballApiClient {
 
     private final WebClient webClient;
 
-    // Injeta as propriedades do application.properties no construtor
     public FootballApiClient(@Value("${api.football.base-url}") String baseUrl,
                              @Value("${api.football.api-key}") String apiKey,
                              WebClient.Builder webClientBuilder) {
@@ -25,12 +24,35 @@ public class FootballApiClient {
         return webClient.get()
                 .uri("/leagues") // Endpoint para buscar ligas
                 .retrieve()
-                .bodyToMono(String.class); // Retorna a resposta como String (por enquanto)
+                .bodyToMono(String.class);
     }
 
+    public Mono<String> getTeamsByLeagueAndSeason(Integer leagueId, Integer season) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/teams")
+                        .queryParam("league", leagueId)
+                        .queryParam("season", season)
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
+    public Mono<String> getFixturesByLeagueAndSeason(Integer leagueId, Integer season) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fixtures")
+                        .queryParam("league", leagueId)
+                        .queryParam("season", season)
+                        .build())
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
+    // Mantenha APENAS ESTE método getLiveMatches()
     public Mono<String> getLiveMatches() {
         return webClient.get()
-                .uri("/fixtures?live=all") // Endpoint para buscar todos os jogos ao vivo
+                .uri("/fixtures?live=all")
                 .retrieve()
                 .bodyToMono(String.class);
     }
